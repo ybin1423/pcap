@@ -1,0 +1,56 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+        <meta charset="utf-8"/>
+        <title>사이트 접속 내역</title>
+        <style>
+            input[type="checkbox"]{      
+                width: 17px; 
+                height: 17px;       
+            }
+          </style>
+    </head>
+    <body>
+        <div class="container">
+            <h2><%=title %></h2>
+            <br/>            
+            
+            <table class="table table-dark table-striped">
+                <thead>
+                    <tr>
+                        <th>id</th>
+                        <th>domain</th>
+                        <th>src_ip</th>
+                        <th>dst_ip</th>
+                        <th>src_port</th>
+                        <th>dst_port</th>                        
+                        <th>create_at</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% site.forEach(function(site){ %>
+                        <form method="get" action="/edit2/<%= site.id %>">
+                        <tr>
+                            <td><%= site.id %></td>
+                            <td><%= site.domain %></td>
+                            <td><%= site.src_ip %></td>
+                            <td><%= site.dst_ip %></td>
+                            <td><%= site.src_port %></td>
+                            <td><%= site.dst_port %></td>                           
+                            <td><%= site.create_at %></td>
+                            <td>
+                                <label><input type="checkbox" name="siteid" value=<%= site.id%>></label>
+                                
+        
+                            </td>
+                        </tr>
+                        <%}); %>
+                </tbody>
+            </table>
+            <p><input type="submit" class="btn btn-sm btn-primary" value="추가" onclick="alert('차단 리스트에 추가 하였습니다')"> 
+                <input type="reset" class="btn btn-sm btn-primary" value="reset"></p>
+                <a href="/blocklist" class="btn btn-info">차단리스트</a>
+            </form>
+            </div>
+    </body>
+
