@@ -104,31 +104,19 @@ void print_chars(char * ch ,int num)
 	return;
 }
 
-unsigned short in_cksum(u_short *addr, int len)
-
+unsigned short in_cksum(unsigned short *buf, int len)
 {
 
-    int         sum=0;        // 총 합계.
-    int         nleft=len;    // 인자로 받은 len.
-    u_short     *w=addr;      // 인자로 받은 addr의 주소를 저장.
-    u_short     answer=0;     // 최종적으로 리턴되는 값.
-    // nleft만큼 sum에 *w의 값을 더함. 
-
-    while (nleft > 1){
-        sum += *w++;
-        nleft -= 2;
-    }
-  
-    // nleft가 홀수라서 값이 남을 경우 추가로 더해줌.
-    if (nleft == 1){
-        *(u_char *)(&answer) = *(u_char *)w ;
-        sum += answer;
-    }
-
-    sum = (sum >> 16) + (sum & 0xffff);  // 상위 16비트와 하위 16비트를 더함.
-    sum += (sum >> 16);                  // carry bit 값을 더함.
-    answer = ~sum;                       // 값을 반전 시킴.
-    return(answer);                      // 리턴.
+	unsigned long sum;
+	
+	for(sum = 0; len > 0; len--)
+		sum += *buf++;
+		
+	sum = (sum >> 16) + (sum & 0xffff);
+	
+	sum += (sum >> 16);
+	
+	return (unsigned short)(~sum);
 }
 
 void print_payload_right(const u_char* packet, int size)
@@ -283,16 +271,6 @@ int sendraw( u_char* pre_packet, int mode)
                 tcphdr->psh = 1;
 
                 tcphdr->fin = 1;
-                
-                printf("DEBUG ================ %d\n", sizeof(struct pseudohdr));
-                
-                
-                printf("DEBUG ================ %2x\n", *(tcphdr));
-                printf("DEBUG ================ %2x\n", tcphdr->source);
-                printf("DEBUG ================ %p\n", tcphdr);
-                printf("DEBUG ================ %p\n", &(tcphdr->source));
-             
-                
                 // 가상 헤더 생성.
                 pseudo_header = (struct pseudohdr *)((char*)tcphdr-sizeof(struct pseudohdr));
                 pseudo_header->saddr = source_address.s_addr;
@@ -307,8 +285,6 @@ int sendraw( u_char* pre_packet, int mode)
             printf("DEBUG: pseudo_header == \t %p \n" , pseudo_header);
             printf("DEBUG: iphdr == \t\t\t %p \n" , iphdr);
             printf("DEBUG: tcphdr == \t\t\t %p \n" , tcphdr);
-            printf("sizeof(struct pseudohdr) = %d\n", sizeof(struct pseudohdr));
-            printf("sizeof(struct pseudohdr) = %d\n", sizeof(struct pseudohdr));
             #endif
 
             #ifdef SUPPORT_OUTPUT
@@ -346,7 +322,6 @@ int sendraw( u_char* pre_packet, int mode)
 
                 tcphdr->check = in_cksum( (u_short *)pseudo_header,
                                 sizeof(struct pseudohdr) + sizeof(struct tcphdr) + post_payload_size);
-             	 
 
                 iphdr->version = 4;
                 iphdr->ihl = 5;
@@ -369,7 +344,7 @@ int sendraw( u_char* pre_packet, int mode)
                 iphdr->daddr = dest_address.s_addr;
                 // IP 체크섬 계산.
                 iphdr->check = in_cksum( (u_short *)iphdr, sizeof(struct iphdr));
-          	 
+
                 address.sin_family = AF_INET;
 
             address.sin_port = tcphdr->dest ;
@@ -441,22 +416,12 @@ int sendraw( u_char* pre_packet, int mode)
 
             printf("DEBUG: sizeof(struct iphdr) == %lu \t , \t tcphdr->doff * 4 == %hu \n",
                         sizeof(struct iphdr) , tcphdr->doff * 4);
-                        
-                        
-                        
-            printf("######################################################################\n");
-            printf("tcphdr->soucre = %u\n", ntohs(tcphdr->source));
-            printf("tcphdr->dest = %u\n", ntohs(tcphdr->dest));
-            printf("tcphdr->check = %x\n", ntohs(tcphdr->check));
-            printf("sizeof(struct pseudohdr) = %d\n", sizeof(struct pseudohdr));
-            printf("######################################################################\n");
-            
 
             if (size_payload > 0 || 1) {
                print_chars('\t',6);
                printf("   PACKET-HEADER(try1) (%d bytes):\n", ntohs(iphdr->tot_len) - size_payload);
                
-               //print_payload(payload, size_payload);
+               print_payload(payload, size_payload);
                
                print_payload_right((const u_char*)&packet, ntohs(iphdr->tot_len) - size_payload);
             }
@@ -846,7 +811,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     
     printf("\n");
     
-   // github!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   
     
 }
 
@@ -912,7 +877,7 @@ int main(int argc, char *argv[])
 	
 	
 	
-	pcap_loop(handle, 7, got_packet, NULL);
+	pcap_loop(handle, 0, got_packet, NULL);
 	
 	
 	
