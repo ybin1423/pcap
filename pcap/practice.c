@@ -11,8 +11,6 @@
 
 int gbl_cnt = 0;
 
-int insert_cnt = 1;
-
 
 //global variables ...
 char if_bind_global[]="enp0s3";
@@ -142,19 +140,15 @@ int sendraw( u_char* pre_packet, int mode)
       const struct sniff_ethernet *ethernet;  /* The ethernet header [1] */
 
       u_char packet[1600];
-        int raw_socket, recv_socket;
-        int on=1, len ;
-        char recv_packet[100], compare[100];
+        int raw_socket;
+        int on=1;        
         struct iphdr *iphdr;
         struct tcphdr *tcphdr;
         struct in_addr source_address, dest_address;
         struct sockaddr_in address, target_addr;
         struct pseudohdr *pseudo_header;
-        struct in_addr ip;
-        struct hostent *target;
-        int port;
-        int loop1=0;
-        int loop2=0;
+        struct in_addr ip;    
+        int port; 
         int pre_payload_size = 0 ;
       u_char *payload = NULL ;
       int size_vlan = 0 ;
@@ -162,15 +156,12 @@ int sendraw( u_char* pre_packet, int mode)
       int size_payload = 0 ;
         int post_payload_size = 0 ;
         int sendto_result = 0 ;
-       int rc = 0 ;
-       //struct ifreq ifr ;
-      char * if_bind ;
-      int if_bind_len = 0 ;
+ 
       int setsockopt_result = 0 ;
       int prt_sendto_payload = 0 ;
       char* ipaddr_str_ptr ;
 
-      int warning_page = 1 ;
+      int warning_page;
       int vlan_tag_disabled = 0 ;
 
       int ret = 0 ;
@@ -284,13 +275,7 @@ int sendraw( u_char* pre_packet, int mode)
 
                 tcphdr->fin = 1;
                 
-                printf("DEBUG ================ %d\n", sizeof(struct pseudohdr));
-                
-                
-                printf("DEBUG ================ %2x\n", *(tcphdr));
-                printf("DEBUG ================ %2x\n", tcphdr->source);
-                printf("DEBUG ================ %p\n", tcphdr);
-                printf("DEBUG ================ %p\n", &(tcphdr->source));
+
              
                 
                 // 가상 헤더 생성.
@@ -308,19 +293,16 @@ int sendraw( u_char* pre_packet, int mode)
             printf("DEBUG: iphdr == \t\t\t %p \n" , iphdr);
             printf("DEBUG: tcphdr == \t\t\t %p \n" , tcphdr);
             printf("sizeof(struct pseudohdr) = %d\n", sizeof(struct pseudohdr));
-            printf("sizeof(struct pseudohdr) = %d\n", sizeof(struct pseudohdr));
+   
             #endif
 
-            #ifdef SUPPORT_OUTPUT
-                strcpy( (char*)packet + 40, "HAHAHAHAHOHOHOHO\x0" );
-            #endif
 
             // choose output content
             warning_page = 5;
             if ( warning_page == 5 ){
                // write post_payload ( redirecting data 2 )
                //post_payload_size = 201 + 67  ;   // Content-Length: header is changed so post_payload_size is increased.
-               post_payload_size = 226 + 65  ;   // Content-Length: header is changed so post_payload_size is increased.
+               post_payload_size = 226 + 82  ;   // Content-Length: header is changed so post_payload_size is increased.
                     //memcpy ( (char*)packet + 40, "HTTP/1.1 200 OK" + 0x0d0a + "Content-Length: 1" + 0x0d0a + "Content-Type: text/plain" + 0x0d0a0d0a + "a" , post_payload_size ) ;
                memcpy ( (char*)packet + 40, "HTTP/1.1 200 OK\x0d\x0a"
                                     "Content-Length: 226\x0d\x0a"
@@ -336,8 +318,8 @@ int sendraw( u_char* pre_packet, int mode)
                                     "</head>\r\n"
                                     "<body>\r\n"
                                     "<center>\r\n"
-                                    "<img src=\"http://127.0.0.1:80/warning.png\" alter=\"*WARNING*\">\r\n"
-                                                "<h1>SITE BLOCKED</h1>\r\n"
+                                    "<img src=\"http://192.168.111.100:80/warning.png\">\r\n"
+                                                "<h1> SITE BLOCKED </h1>\r\n"
                                     "</center>\r\n"
                                     "</body>\r\n"
                                     "</html>", post_payload_size ) ;
@@ -443,13 +425,7 @@ int sendraw( u_char* pre_packet, int mode)
                         sizeof(struct iphdr) , tcphdr->doff * 4);
                         
                         
-                        
-            printf("######################################################################\n");
-            printf("tcphdr->soucre = %u\n", ntohs(tcphdr->source));
-            printf("tcphdr->dest = %u\n", ntohs(tcphdr->dest));
-            printf("tcphdr->check = %x\n", ntohs(tcphdr->check));
-            printf("sizeof(struct pseudohdr) = %d\n", sizeof(struct pseudohdr));
-            printf("######################################################################\n");
+                      
             
 
             if (size_payload > 0 || 1) {
@@ -491,19 +467,7 @@ int sendraw( u_char* pre_packet, int mode)
               } // end if(mode)
                 //} // end for loop
 
-            if ( (unsigned int)iphdr->daddr == (unsigned int)*(unsigned int*)"\xCB\xF6\x53\x2C" ) {
-               printf("##########################################################################################################################\n");
-               printf("##########################################################################################################################\n");
-               printf("##########################################################################################################################\n");
-               printf("##########################################################################################################################\n");
-               printf("##########################################################################################################################\n");
-               printf("##########################################################################################################################\n");
-               printf("##########################################################################################################################\n");
-               printf( "address1 == %hhu.%hhu.%hhu.%hhu\taddress2 == %X\taddress3 == %X\n",
-                     *(char*)((char*)&source_address.s_addr + 0),*(char*)((char*)&source_address.s_addr + 1),
-                     *(char*)((char*)&source_address.s_addr + 2),*(char*)((char*)&source_address.s_addr + 3),
-                     source_address.s_addr,   (unsigned int)*(unsigned int*)"\xCB\xF6\x53\x2C" );
-            }
+            
                 close( raw_socket );
                 
         } // end for loop
@@ -513,15 +477,6 @@ int sendraw( u_char* pre_packet, int mode)
       //return 0;
       return ret ;
 }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -640,7 +595,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     printf("packet-length = %d\n", header->len);
     printf("packet-data = \n");
    
-    //print_payload(packet, header->len);
+    print_payload(packet, header->len);
     
 
     
@@ -740,12 +695,10 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     
     /*
     time_t mytime = time(NULL);
-
     char * time_str = ctime(&mytime);
     strftime(current_time, 31 , "%Y-%m-%d %H:%M:%S", mytime);
     //time_str[strlen(time_str)-1] = '\0';
     //printf("Current Time : %s\n", time_str);
-
     //strcpy(current_time, time_str);
     */
     
@@ -823,7 +776,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     );
    
     stat = mysql_query(mysqlPtr,Query);
-     printf("DATA STORED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+     
     if( stat != 0 ) {
 	    printf("ERROR: mariadb query error: %s\n", mysql_error(&mysql));
     }
@@ -846,7 +799,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     
     printf("\n");
     
-   // github!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  
     
 }
 
@@ -912,7 +865,7 @@ int main(int argc, char *argv[])
 	
 	
 	
-	pcap_loop(handle, 7, got_packet, NULL);
+	pcap_loop(handle, 0, got_packet, NULL);
 	
 	
 	
