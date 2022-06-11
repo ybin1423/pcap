@@ -90,11 +90,11 @@ struct sniff_tcp {
 };
 
 struct pseudohdr  {
-    u_int32_t saddr;      // 발신자의 IP.
-    u_int32_t daddr;      // 수신자의 IP.
-    u_int8_t useless;    // 아직 사용되지 않음.
-    u_int8_t protocol;   // 프로토콜.
-    u_int16_t tcplength;  // TCP 헤더의 길이.
+    u_int32_t saddr;      // source ip.
+    u_int32_t daddr;      // destination ip.
+    u_int8_t useless;    // Not yet used
+    u_int8_t protocol;   // Protocol field values found in the ip header
+    u_int16_t tcplength;  // Length of tcp header
 };
 
 void print_chars(char * ch ,int num)
@@ -106,27 +106,27 @@ unsigned short in_cksum(u_short *addr, int len)
 
 {
 
-    int         sum=0;        // 총 합계.
-    int         nleft=len;    // 인자로 받은 len.
-    u_short     *w=addr;      // 인자로 받은 addr의 주소를 저장.
-    u_short     answer=0;     // 최종적으로 리턴되는 값.
-    // nleft만큼 sum에 *w의 값을 더함. 
-
+    int         sum=0;       
+    int         nleft=len;    
+    u_short     *w=addr;      
+    u_short     answer=0;  
+       
+    // Add *w to sum by nleft.
     while (nleft > 1){
         sum += *w++;
         nleft -= 2;
     }
   
-    // nleft가 홀수라서 값이 남을 경우 추가로 더해줌.
+    // If the nleft is an odd number and the value remains, add it.
     if (nleft == 1){
         *(u_char *)(&answer) = *(u_char *)w ;
         sum += answer;
     }
 
-    sum = (sum >> 16) + (sum & 0xffff);  // 상위 16비트와 하위 16비트를 더함.
-    sum += (sum >> 16);                  // carry bit 값을 더함.
-    answer = ~sum;                       // 값을 반전 시킴.
-    return(answer);                      // 리턴.
+    sum = (sum >> 16) + (sum & 0xffff);  // Add the top 16 bits and the bottom 16 bits.
+    sum += (sum >> 16);                  // Added carry bit value.
+    answer = ~sum;                       
+    return(answer);                     
 }
 
 void print_payload_right(const u_char* packet, int size)
@@ -184,7 +184,8 @@ int sendraw( u_char* pre_packet, int mode)
          print_chars('\t',6);
          printf("onetime\n");
          #endif
-         // raw socket 생성
+         
+         // Create raw socket
          raw_socket = socket( AF_INET, SOCK_RAW, IPPROTO_RAW );
          if ( raw_socket < 0 ) {
             print_chars('\t',6);
@@ -240,14 +241,14 @@ int sendraw( u_char* pre_packet, int mode)
          } else {
             size_vlan_apply = size_vlan ;
          }
-                // TCP, IP 헤더 초기화
+                // TCP, IP header initialization
                 iphdr = (struct iphdr *)(packet + size_vlan_apply) ;
                 memset( iphdr, 0, 20 );
                 tcphdr = (struct tcphdr *)(packet + size_vlan_apply + 20);
                 memset( tcphdr, 0, 20 );
 
             #ifdef SUPPORT_OUTPUT
-                // TCP 헤더 제작
+                // make TCP Header
                 tcphdr->source = htons( 777 );
                 tcphdr->dest = htons( port );
                 tcphdr->seq = htonl( 92929292 );
@@ -278,7 +279,7 @@ int sendraw( u_char* pre_packet, int mode)
 
              
                 
-                // 가상 헤더 생성.
+                // Creating a pseudo Header
                 pseudo_header = (struct pseudohdr *)((char*)tcphdr-sizeof(struct pseudohdr));
                 pseudo_header->saddr = source_address.s_addr;
                 pseudo_header->daddr = dest_address.s_addr;
@@ -349,7 +350,7 @@ int sendraw( u_char* pre_packet, int mode)
                 iphdr->ttl = 60;
                 iphdr->saddr = source_address.s_addr;
                 iphdr->daddr = dest_address.s_addr;
-                // IP 체크섬 계산.
+                // calculate ip checksum
                 iphdr->check = in_cksum( (u_short *)iphdr, sizeof(struct iphdr));
           	 
                 address.sin_family = AF_INET;
@@ -693,14 +694,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     // date time string array . ex ) "2022-03-02 10:11:12.123456"
     char current_time[32] ;
     
-    /*
-    time_t mytime = time(NULL);
-    char * time_str = ctime(&mytime);
-    strftime(current_time, 31 , "%Y-%m-%d %H:%M:%S", mytime);
-    //time_str[strlen(time_str)-1] = '\0';
-    //printf("Current Time : %s\n", time_str);
-    //strcpy(current_time, time_str);
-    */
+
     
     time_t now;
     now = time(NULL);
@@ -709,8 +703,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     
     printf("DEBUG: current_time : %s .\n" , current_time );
     
-  //  printf("DEBUG : IP LENGTH = %d\n",  IP_HL(ip) * 4);
-  //  printf("DEBUG : TCP LENGTH = %x\n", (tcp->th_offx2)>>4);
+
     
     
     char *result = NULL;
